@@ -4,10 +4,9 @@ import { useEffect, useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { useRouter } from "next/navigation";
 import MapWrapper from "../components/MapWrapper";
-import Compass from "../components/Compass";
-import { collection, addDoc, onSnapshot, serverTimestamp } from "firebase/firestore";
+import { collection, addDoc, onSnapshot, serverTimestamp, deleteDoc, doc } from "firebase/firestore";
 import { db } from "../lib/firebase";
-import { LogOut, Plus, X, MapPin, BarChart3, Users, Home } from "lucide-react";
+import { LogOut, Plus, X, MapPin, BarChart3, Users, Home, Trash2, TrendingUp, Navigation, MousePointerClick } from "lucide-react";
 import styles from "./page.module.css";
 
 export default function Dashboard() {
@@ -25,6 +24,7 @@ export default function Dashboard() {
     longitude: ""
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLocating, setIsLocating] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -62,6 +62,17 @@ export default function Dashboard() {
         ...prev,
         latitude: latlng.lat,
         longitude: latlng.lng
+      }));
+      setShowForm(true);
+    }
+  };
+
+  const handleCompassClick = (latlng) => {
+    if (user.role === 'surveyor' || user.role === 'admin' || !user.role) {
+      setFormData(prev => ({
+        ...prev,
+        latitude: latlng[0],
+        longitude: latlng[1]
       }));
       setShowForm(true);
     }
@@ -105,7 +116,19 @@ export default function Dashboard() {
     }
   };
 
+  const handleDelete = async (id) => {
+    if (window.confirm("Apakah Anda yakin ingin menghapus data ini?")) {
+      try {
+        await deleteDoc(doc(db, "houses", id));
+      } catch (error) {
+        console.error("Error deleting document: ", error);
+        alert("Gagal menghapus data!");
+      }
+    }
+  };
+
   const totalMembers = houses.reduce((acc, h) => acc + (Number(h.jumlah_anggota) || 0), 0);
+  const avgMembers = houses.length > 0 ? (totalMembers / houses.length).toFixed(1) : 0;
 
   return (
     <div className={styles.container}>
@@ -136,15 +159,17 @@ export default function Dashboard() {
       {/* Main Map Area */}
       <main className={styles.mapContainer}>
         <MapWrapper houses={houses} onMapClick={handleMapClick} />
-        <Compass />
       </main>
 
-      {/* Floating Add Button */}
+      {/* Floating Action Button */}
       {!showForm && !showAdminDashboard && (
         <button 
           className={styles.fab}
+          disabled={isLocating}
+          style={{ opacity: isLocating ? 0.7 : 1 }}
           onClick={() => {
             if (navigator.geolocation) {
+              setIsLocating(true);
               navigator.geolocation.getCurrentPosition(
                 (pos) => {
                   setFormData(prev => ({
@@ -152,20 +177,23 @@ export default function Dashboard() {
                     latitude: pos.coords.latitude,
                     longitude: pos.coords.longitude
                   }));
+                  setIsLocating(false);
                   setShowForm(true);
                 },
-                () => {
+                (error) => {
+                  console.warn("Geolocation warning:", error);
+                  setIsLocating(false);
                   setShowForm(true);
                 },
-                { enableHighAccuracy: true }
+                { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
               );
             } else {
               setShowForm(true);
             }
           }}
         >
-          <Plus size={24} />
-          <span>Lokasi Saat Ini</span>
+          <Navigation size={20} className={isLocating ? styles.spin : ""} />
+          <span>{isLocating ? "Mencari..." : "Lokasi Saat Ini"}</span>
         </button>
       )}
 
@@ -264,7 +292,7 @@ export default function Dashboard() {
                   </div>
                   <div className={styles.statInfo}>
                     <h3>{houses.length}</h3>
-                    <p>Total Rumah Terdata</p>
+                    <p>Rumah Terdata</p>
                   </div>
                 </div>
                 <div className={styles.statBox}>
@@ -273,19 +301,38 @@ export default function Dashboard() {
                   </div>
                   <div className={styles.statInfo}>
                     <h3>{totalMembers}</h3>
-                    <p>Total Anggota Keluarga</p>
+                    <p>Total Warga</p>
+                  </div>
+                </div>
+                <div className={styles.statBox}>
+                  <div className={styles.statIconWrapper} style={{ backgroundColor: '#fef3c7', color: '#d97706' }}>
+                    <TrendingUp size={28} />
+                  </div>
+                  <div className={styles.statInfo}>
+                    <h3>{avgMembers}</h3>
+                    <p>Rata-rata/Rumah</p>
                   </div>
                 </div>
               </div>
               <div className={styles.recentList}>
-                <h3>Data Terbaru</h3>
-                {houses.slice().sort((a, b) => b.created_at?.seconds - a.created_at?.seconds).slice(0, 5).map((house, idx) => (
-                  <div key={idx} className={styles.recentItem}>
-                    <MapPin size={16} color="#64748b" />
-                    <div>
-                      <strong>{house.nama_kepala_keluarga}</strong> ({house.jumlah_anggota} orang)
-                      <p>{house.alamat}</p>
+                <h3>Semua Data Terdaftar</h3>
+                {houses.slice().sort((a, b) => b.created_at?.seconds - a.created_at?.seconds).map((house) => (
+                  <div key={house.id} className={styles.recentItem}>
+                    <div className={styles.recentItemContent}>
+                      <MapPin size={16} color="#64748b" className={styles.recentIcon} />
+                      <div>
+                        <strong>{house.nama_kepala_keluarga}</strong> ({house.jumlah_anggota} orang)
+                        <p>{house.alamat}</p>
+                        <small className={styles.recentCoords}>Lat: {house.latitude.toFixed(5)}, Lng: {house.longitude.toFixed(5)}</small>
+                      </div>
                     </div>
+                    <button 
+                      className={styles.deleteButton} 
+                      onClick={() => handleDelete(house.id)}
+                      title="Hapus Data"
+                    >
+                      <Trash2 size={16} />
+                    </button>
                   </div>
                 ))}
                 {houses.length === 0 && <p className={styles.emptyState}>Belum ada data</p>}

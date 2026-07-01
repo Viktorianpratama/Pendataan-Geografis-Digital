@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { Compass as CompassIcon } from "lucide-react";
 import styles from "./Compass.module.css";
 
-export default function Compass() {
+export default function Compass({ onClick }) {
   const [heading, setHeading] = useState(0);
 
   useEffect(() => {
@@ -30,7 +30,7 @@ export default function Compass() {
   }, []);
 
   return (
-    <div className={styles.compassContainer}>
+    <div className={styles.compassContainer} onClick={onClick}>
       <div 
         className={styles.compassRose}
         style={{ transform: `rotate(${-heading}deg)` }}

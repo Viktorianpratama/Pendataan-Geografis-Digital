@@ -1,7 +1,10 @@
+"use client";
+
 import { MapContainer, TileLayer, Marker, Popup, useMapEvents, CircleMarker, useMap, LayersControl, ZoomControl } from "react-leaflet";
 import { useEffect, useState } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+import Compass from "./Compass";
 
 // Fix default marker icon issue and use custom icon.svg
 const DefaultIcon = L.icon({
@@ -22,6 +25,18 @@ function MapEvents({ onMapClick }) {
     }
   });
   return null;
+}
+
+function CompassControl({ currentPosition }) {
+  const map = useMap();
+  const handleCompassClick = () => {
+    if (currentPosition) {
+      map.flyTo(currentPosition, 17, { animate: true, duration: 1.5 });
+    } else {
+      map.locate({ setView: true, maxZoom: 17 });
+    }
+  };
+  return <Compass onClick={handleCompassClick} />;
 }
 
 export default function Map({ houses = [], onMapClick, center = [-0.8615, 134.0622], zoom = 15 }) {
@@ -49,12 +64,23 @@ export default function Map({ houses = [], onMapClick, center = [-0.8615, 134.06
     <MapContainer center={center} zoom={zoom} zoomControl={false} style={{ height: "100%", width: "100%", zIndex: 0 }}>
       <ZoomControl position="bottomright" />
       <LayersControl position="bottomleft">
+        {/* Google Maps Satellite Hybrid (Terkadang Paling Baru) */}
+        <LayersControl.BaseLayer checked name="Google Satellite">
+          <TileLayer
+            url="https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}"
+            attribution='&copy; Google'
+            maxZoom={21}
+            maxNativeZoom={19}
+          />
+        </LayersControl.BaseLayer>
+
         {/* ESRI World Imagery Satellite Map - Sangat cepat dan detail */}
-        <LayersControl.BaseLayer checked name="Peta Satelit (ESRI)">
+        <LayersControl.BaseLayer name="Peta Satelit (ESRI)">
           <TileLayer
             url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
             attribution='&copy; <a href="https://www.esri.com/">Esri</a>'
-            maxZoom={19}
+            maxZoom={21}
+            maxNativeZoom={17}
           />
         </LayersControl.BaseLayer>
         
@@ -63,7 +89,8 @@ export default function Map({ houses = [], onMapClick, center = [-0.8615, 134.06
           <TileLayer
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-            maxZoom={19}
+            maxZoom={20}
+            maxNativeZoom={19}
           />
         </LayersControl.BaseLayer>
         
@@ -72,11 +99,13 @@ export default function Map({ houses = [], onMapClick, center = [-0.8615, 134.06
           <TileLayer
             url="https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png"
             attribution='Map data: &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, <a href="http://viewfinderpanoramas.org">SRTM</a> | Map style: &copy; <a href="https://opentopomap.org">OpenTopoMap</a> (<a href="https://creativecommons.org/licenses/by-sa/3.0/">CC-BY-SA</a>)'
-            maxZoom={17}
+            maxZoom={20}
+            maxNativeZoom={17}
           />
         </LayersControl.BaseLayer>
       </LayersControl>
       
+      <CompassControl currentPosition={currentPosition} />
       <MapEvents onMapClick={onMapClick} />
       
       {currentPosition && (

@@ -376,9 +376,9 @@
 
 .statGrid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 20px;
-  margin-bottom: 32px;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
 }
 
 .statBox {
@@ -437,11 +437,23 @@
 
 .recentItem {
   display: flex;
-  align-items: flex-start;
-  gap: 16px;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
   padding: 16px;
   border-radius: 12px;
   transition: background 0.2s ease;
+}
+
+.recentItemContent {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  flex: 1;
+}
+
+.recentIcon {
+  margin-top: 4px;
 }
 
 .recentItem:hover {
@@ -457,6 +469,34 @@
 .recentItem strong {
   color: #1e293b;
   font-weight: 700;
+}
+
+.recentCoords {
+  display: block;
+  margin-top: 4px;
+  font-size: 11px;
+  color: #94a3b8;
+  font-family: monospace;
+}
+
+.deleteButton {
+  background: #fee2e2;
+  color: #ef4444;
+  border: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+.deleteButton:hover {
+  background: #fca5a5;
+  color: #991b1b;
 }
 
 .emptyState {
@@ -519,4 +559,12 @@
   .statGrid {
     grid-template-columns: 1fr;
   }
+}
+
+.spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  100% { transform: rotate(360deg); }
 }

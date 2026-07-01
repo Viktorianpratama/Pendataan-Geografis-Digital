@@ -12,6 +12,6 @@ const Map = dynamic(() => import("./Map"), {
   )
 });
 
-export default function MapWrapper(props) {
-  return <Map {...props} />;
+export default function MapWrapper({ houses, onMapClick }) {
+  return <Map houses={houses} onMapClick={onMapClick} />;
 }
