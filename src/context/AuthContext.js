@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState } from "react";
-import { onAuthStateChanged, signInWithEmailAndPassword, signOut } from "firebase/auth";
+import { onAuthStateChanged, signInWithEmailAndPassword, signOut, setPersistence, browserLocalPersistence, browserSessionPersistence } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
 import { auth, db } from "../lib/firebase";
 
@@ -42,7 +42,8 @@ export function AuthProvider({ children }) {
     return () => unsubscribe();
   }, []);
 
-  const login = (email, password) => {
+  const login = async (email, password, rememberMe = true) => {
+    await setPersistence(auth, rememberMe ? browserLocalPersistence : browserSessionPersistence);
     return signInWithEmailAndPassword(auth, email, password);
   };
 

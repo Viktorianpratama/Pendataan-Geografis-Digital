@@ -1,7 +1,7 @@
 "use client";
 
 import { MapContainer, TileLayer, Marker, Popup, useMapEvents, CircleMarker, useMap, LayersControl, ZoomControl } from "react-leaflet";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import Compass from "./Compass";
@@ -37,6 +37,20 @@ function CompassControl({ currentPosition }) {
     }
   };
   return <Compass onClick={handleCompassClick} />;
+}
+
+function AutoCenter({ currentPosition }) {
+  const map = useMap();
+  const hasCentered = useRef(false);
+
+  useEffect(() => {
+    if (currentPosition && !hasCentered.current) {
+      map.flyTo(currentPosition, 17, { animate: true, duration: 1.5 });
+      hasCentered.current = true;
+    }
+  }, [currentPosition, map]);
+
+  return null;
 }
 
 export default function Map({ houses = [], onMapClick, center = [-0.8615, 134.0622], zoom = 15 }) {
@@ -107,6 +121,7 @@ export default function Map({ houses = [], onMapClick, center = [-0.8615, 134.06
       
       <CompassControl currentPosition={currentPosition} />
       <MapEvents onMapClick={onMapClick} />
+      <AutoCenter currentPosition={currentPosition} />
       
       {currentPosition && (
         <CircleMarker 
